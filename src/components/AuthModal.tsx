@@ -100,7 +100,7 @@ export function AuthModal({ onLogin }: AuthModalProps) {
     setIsSubmitting(true);
     try {
       if (isSignUp) {
-        const { error } = await createClient().auth.signUp({
+        const { data, error } = await createClient().auth.signUp({
           email: normalizedEmail,
           password,
           options: {
@@ -109,10 +109,14 @@ export function AuthModal({ onLogin }: AuthModalProps) {
           },
         });
         if (error) throw error;
-        onLogin(normalizedEmail);
         setIsOpen(false);
         resetForm();
-        toast({ title: "Account created", description: "Welcome to KipCash!", variant: "success" });
+        if (data.session) {
+          onLogin(normalizedEmail);
+          toast({ title: "Account created", description: "Welcome to KipCash!", variant: "success" });
+        } else {
+          toast({ title: "Verify your email", description: "We sent a confirmation link to your email address. Verify it before logging in.", variant: "info" });
+        }
       } else {
         const response = await dispatch(userSignIn({ email: normalizedEmail, password }));
         const payload = response.payload as { error?: string };

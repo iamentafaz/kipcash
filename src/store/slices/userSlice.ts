@@ -1,5 +1,6 @@
 import {createClient} from '../../utils/supabase/client'
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import type { Session } from "@supabase/supabase-js";
+import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 export const getLoggedInUser = createAsyncThunk('users/getUser', async () => {
     const supabase = await createClient()
@@ -10,7 +11,6 @@ export const getLoggedInUser = createAsyncThunk('users/getUser', async () => {
 export const userLogOut =  createAsyncThunk('users/logout', async () => {
     const supabase = await createClient()
     const { error} = await supabase.auth.signOut()
-    console.log(error)
     return error
 })
 
@@ -28,13 +28,20 @@ export const userSlice = createSlice({
         }, 
         session: {}
     },
-    reducers: {},
+    reducers: {
+        setAuthSession: (state, action: PayloadAction<Session | null>) => {
+            state.user = action.payload?.user ?? { id: null }
+            state.session = action.payload ?? {}
+        },
+    },
     extraReducers: (builder) => {
         builder.addCase(getLoggedInUser.fulfilled, (state, action)=> {
-            console.log('action', action)
             if(action.payload.session) {
                 state.user = action.payload.session.user
                 state.session = action.payload.session
+            } else {
+                state.user = { id: null }
+                state.session = {}
             }
         })
         builder.addCase(userLogOut.fulfilled, (state, action)=> {
@@ -42,7 +49,6 @@ export const userSlice = createSlice({
             state.session = {}
         })
         builder.addCase(userSignIn.fulfilled, (state, action) => {
-            console.log('payload', action)
             if('session' in action.payload && action.payload.session) {
                 state.user = action.payload.session.user
                 state.session = action.payload.session
@@ -51,4 +57,5 @@ export const userSlice = createSlice({
     }
 })
 
+export const { setAuthSession } = userSlice.actions
 export default userSlice.reducer

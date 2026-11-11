@@ -7,9 +7,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
 import { store } from "@/store/store";
-import { getLoggedInUser, userLogOut } from "@/store/slices/userSlice";
+import { getLoggedInUser, setAuthSession, userLogOut } from "@/store/slices/userSlice";
 import { useAppDispatch } from "@/store/types";
 import { ShellLayout } from "@/components/ShellLayout";
+import { createClient } from "@/utils/supabase/client";
 
 const queryClient = new QueryClient();
 
@@ -17,7 +18,8 @@ function AppProviders({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
 
   const handleLogin = (email: string) => {
-    // Handle login logic
+    void email;
+    void dispatch(getLoggedInUser());
   };
 
   const handleLogout = () => {
@@ -26,6 +28,13 @@ function AppProviders({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     dispatch(getLoggedInUser());
+
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      dispatch(setAuthSession(session));
+    });
+
+    return () => subscription.unsubscribe();
   }, [dispatch]);
 
   return (
